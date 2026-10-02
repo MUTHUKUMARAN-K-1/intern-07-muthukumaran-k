@@ -1,8 +1,14 @@
 # Milestone 1 — Requirements, Database Design & Core Setup (Week 1–2)
 
-- **Intern:** Reference implementation (mentor-maintained, on `main`)
-- **Branch:** `main`
-- **Submitted on:** 2026-09-05
+- **Intern:** Muthukumaran K
+- **Branch:** `intern/07-muthukumaran-k`
+- **Updated on:** 2026-10-02
+
+This submission extends the reference implementation at `f4e9167`. The
+implementation notes and historical measurements below were inherited; current
+branch changes, test results and deployment limits are recorded in the
+[branch readiness report](../reports/branch-readiness.md). The full backend suite
+now passes 648 tests, including real Tesseract cases.
 
 ## Evaluation criteria
 
@@ -17,7 +23,7 @@
 | UI wireframes and workflow planning | Done | [`docs/wireframes/wireframes.md`](../wireframes/wireframes.md) |
 | PostgreSQL configured | Done | `config/settings/base.py` (`DATABASE_URL` → `POSTGRES_*` → SQLite fallback); CI runs the suite against PostgreSQL 16 |
 
-## What I built
+## Implementation
 
 **Backend.** A Django 6.0 / DRF project with three apps. `accounts` owns
 identity: a UUID-keyed, email-login `User` covering all three roles, JWT

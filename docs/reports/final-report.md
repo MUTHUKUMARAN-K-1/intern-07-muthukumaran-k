@@ -2,6 +2,13 @@
 
 **Intelligent Medicine Reminder and Medication Tracking Platform**
 
+For this fork, the [branch readiness report](branch-readiness.md) and
+[testing report](testing-report.md) are the current evidence: **831 tests pass**.
+The narrative and historical measurements below originated in the reference
+implementation at `f4e9167`. This branch completes account UI, browser push,
+persistent notification retries and production deployment configuration.
+Cloud hosting and real provider delivery remain release acceptance steps.
+
 ## 1. Summary
 
 PillSync helps people take the right medicine at the right time, and tells them
@@ -30,7 +37,7 @@ milestones built it up in order:
 | Authentication, roles, profiles, families, caregivers | Done (M1) |
 | Medicine management, disease-based organisation | Done (M2) |
 | Dosage scheduling, reminders, Taken / Missed / Snooze | Done (M2) |
-| Push, email and SMS notification workflows | Built and tested; **real delivery untried** — providers fall back to the console without credentials |
+| Push, email and SMS notification workflows | Built and tested; **real delivery untried** — development simulates delivery; production missing transports fail visibly |
 | Multiple patient profiles, caregiver alerts | Done (M1–M3) |
 | Prescription OCR with extraction of name, dosage, quantity, frequency, details | Done (M3): Tesseract, rule-based parser, catalogue matching, human review |
 | Manual entry as an alternative | Done — paste or type the text and take the same review path; the medicine form remains |
@@ -38,7 +45,7 @@ milestones built it up in order:
 | Refill and low-stock notifications, caregiver notifications | Done (M3) |
 | Adherence analytics: daily history, percentage, trends | Done (M3) |
 | Dashboards; refill and adherence visualisations | Done (M4) |
-| Testing and validation | Done (M4): 801 automated tests, 20 deployment checks |
+| Testing and validation | 831 automated tests passed locally; 20 deployment checks configured in CI |
 | Cloud deployment | **Not done.** Packaged, verified as a running stack, written up for Render, AWS and Azure — but no live host, because that needs an account that belongs to a person |
 | Final documentation and presentation | Done; no video recorded |
 | spaCy or OpenAI for parsing | **Not used**, deliberately (see 4.1) |

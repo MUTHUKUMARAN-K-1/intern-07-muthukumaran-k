@@ -42,7 +42,7 @@ token is usable at most once.
 | POST | `register/` | — | Create a patient or caregiver account; returns tokens |
 | POST | `login/` | — | Email + password; returns tokens and the user |
 | POST | `google/` | — | Exchange a verified Google ID token for tokens |
-| POST | `logout/` | yes | Blacklist a refresh token |
+| POST | `logout/` | yes | Blacklist a refresh token; optional `device_id` revokes the owned browser push registration |
 | POST | `token/refresh/` | — | New access token from a refresh token |
 | POST | `token/verify/` | — | Check whether a token is still valid |
 | POST | `password/change/` | yes | Change password, current one required |

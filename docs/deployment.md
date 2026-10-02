@@ -2,6 +2,40 @@
 
 **Milestone 4 deliverable — deployment steps.**
 
+For this submission, deploy **MUTHUKUMARAN-K-1/intern-07-muthukumaran-k**,
+branch **`intern/07-muthukumaran-k`**. Both blueprints pin that branch.
+The [current verification report](reports/branch-readiness.md) separates this
+run's evidence from the reference implementation's historical container tests.
+
+## Configure the complete account and notification workflows
+
+- Set `FRONTEND_BASE_URL` to the public HTTPS web URL. Password-reset emails link
+  to `/reset-password?uid=...&token=...` on this origin.
+- Create a Google web OAuth client, allow the web app's JavaScript origin, and set
+  the same ID in `GOOGLE_OAUTH2_CLIENT_ID` and `VITE_GOOGLE_CLIENT_ID`. The server
+  verifies Google's ID token; this flow does not need a client secret.
+- Configure a verified email sender and SendGrid or SMTP. Set the same email
+  environment on API and worker, since password resets and scheduled reminders
+  run in different processes.
+- For browser push, configure Firebase Cloud Messaging and a web VAPID key. Set
+  the six `VITE_FIREBASE_*` values shown in `frontend/.env.example` at **build time**.
+  These are public web-app configuration. Never put the service-account private
+  key in a `VITE_*` variable.
+- Mount the Firebase service-account JSON read-only on **API and worker**, and set
+  `FIREBASE_CREDENTIALS_PATH`. On Render, upload the same secret file to both
+  services as `/etc/secrets/firebase-service-account.json`. For Compose, add a
+  read-only host-file mount under `x-backend.volumes` alongside the media volume.
+- Set the three `TWILIO_*` variables on API and worker for SMS. Users also need a
+  valid phone number and an enabled SMS preference.
+- Rebuild the frontend after changing public Google/Firebase values. On the
+  Notifications page, enable browser reminders explicitly and grant permission.
+  Test delivery with the app both open and closed, then sign out and verify the
+  previous account's registration is inactive.
+
+Without transport configuration, production notification attempts are logged as
+failed, not as successful console deliveries. Development remains a simulated
+demo. Delivery statistics measure provider acceptance, not end-device receipts.
+
 This guide gets PillSync from a repository to a running, HTTPS-served
 application. Read [What has and has not been done](#what-has-and-has-not-been-done)
 first: it is precise about which paths were exercised and which are written from
@@ -51,7 +85,7 @@ flowchart LR
 
 The production settings **refuse to start** if `SECRET_KEY` is missing or looks
 like the development default, if `ALLOWED_HOSTS` is empty, or if the database is
-SQLite. A misconfigured deployment fails at boot rather than running insecurely.
+SQLite, or if `CACHE_URL` is missing. A misconfigured deployment fails at boot.
 
 ---
 
@@ -91,8 +125,8 @@ need one.
 applied to a Render account: that needs an account and payment method that belong
 to a person, not to this repository.
 
-1. Push the repository to GitHub (or GitLab) and sign in to Render.
-2. **New → Blueprint**, choose the repository. Render reads `render.yaml` and
+1. Connect this fork to Render and select `intern/07-muthukumaran-k`.
+2. **New → Blueprint**, choose this repository and branch. Render reads `render.yaml` and
    proposes: a Postgres database, a Redis-compatible key-value store, the API, a
    background worker, and the static web app.
 3. Review the services, confirm. Render builds the backend image from
@@ -106,7 +140,12 @@ to a person, not to this repository.
 5. Set the `destination` of the `/api/*` and `/admin/*` rewrites in the web app
    (`render.yaml` → `routes`) to the API's URL if it differs from
    `pillsync-api.onrender.com`.
-6. Open the web app's URL, register, and run `scripts/smoke_test.py` against it.
+6. Update all `/api/*`, `/admin/*`, `/static/*` and `/health/*` rewrites if the API
+   hostname changes. Set `FRONTEND_BASE_URL`, the verified sender and provider
+   variables on API and worker. Keep `OCR_ASYNC=false`: Render's API disk is not
+   shared with its worker, so image OCR must run on the API.
+7. Open the web app's URL, register, and run `scripts/smoke_test.py` against staging.
+   Check Google sign-in, reset links, real device delivery and scheduled jobs.
 
 Things to know about Render:
 
@@ -237,6 +276,7 @@ Required, with no default:
 | `ALLOWED_HOSTS` | Comma-separated host names the site answers to |
 | `DATABASE_URL` **or** `POSTGRES_HOST`, `POSTGRES_PASSWORD` (+ `POSTGRES_DB`, `POSTGRES_USER`, `POSTGRES_PORT`) | PostgreSQL |
 | `CELERY_BROKER_URL`, `CELERY_RESULT_BACKEND` | Redis URLs |
+| `CACHE_URL` | Shared Redis rate-limit cache; Compose supplies database 2 |
 
 Optional:
 
@@ -251,7 +291,10 @@ Optional:
 | `DEFAULT_FROM_EMAIL` | `noreply@pillsync.local` | Sender address |
 | `FIREBASE_CREDENTIALS_PATH` | — | Push notifications (FCM) |
 | `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_FROM_NUMBER` | — | SMS |
-| `GOOGLE_OAUTH2_CLIENT_ID`, `GOOGLE_OAUTH2_CLIENT_SECRET` | — | "Sign in with Google" |
+| `GOOGLE_OAUTH2_CLIENT_ID`, `VITE_GOOGLE_CLIENT_ID` | — | Matching Google ID-token sign-in client IDs |
+| `FRONTEND_BASE_URL` | local development origin | Public HTTPS origin for reset links |
+| `VITE_FIREBASE_*` | — | Public web configuration and VAPID key; see frontend template |
+| `NOTIFICATION_MAX_ATTEMPTS` | `3` | Bounded retry attempts, with exponential minute backoff |
 | `OCR_ENGINE` | Tesseract | Dotted path of an OCR engine class |
 | `OCR_ASYNC` | `false` | Queue scans on Celery instead of reading inline. Turn on once a worker runs |
 | `OCR_RETENTION_DAYS` | `30` | Unconfirmed scans and their images are deleted after this |
@@ -266,7 +309,7 @@ Optional:
 ## Health, monitoring and operations
 
 - **`GET /health/`** — liveness: the process is up.
-- **`GET /health/ready/`** — readiness: the database answers. Use this for load
+- **`GET /health/ready/`** — readiness: database and shared cache answer. Use this for load
   balancer and container health checks; it takes an instance out of rotation when
   it loses the database.
 - Every response carries a **`Server-Timing`** header, and requests slower than
@@ -277,7 +320,7 @@ Optional:
   an APM (the `Server-Timing` header carries what one needs).
 - **Nightly jobs** (Celery beat): dose generation 02:00, scan cleanup 03:30,
   refill forecasts 06:00, prescription expiry 08:00; missed-dose sweep every 15
-  minutes, reminder dispatch every minute.
+  minutes, reminder dispatch and failed-delivery recovery every minute.
 - **Rollback:** redeploy the previous image tag. Migrations in this release only
   add tables and columns; none removes or rewrites data, so rolling the code back
   leaves a compatible database.
@@ -299,6 +342,10 @@ every push against the full stack.
 ## What has and has not been done
 
 **Done and tested:**
+
+The container and load-test claims below describe the inherited reference build.
+This fork was re-tested with 831 automated tests; its updated container topology
+is checked by CI because Docker was unavailable locally. See the current report.
 - Both images build; the production image is what a plain `docker build` gives.
 - The full production topology (Postgres, Redis, gunicorn, nginx, Celery worker
   and beat) runs from `docker-compose.prod.yml`. The smoke test passes 20/20
@@ -311,7 +358,7 @@ every push against the full stack.
 **Written from documentation, not exercised:**
 - `render.yaml`, `render.free.yaml` (the cron endpoint behind it is tested), and the AWS and Azure sections. No cloud account was used, so
   there is **no live URL**. Expect to adjust names, plan sizes and regions.
-- Real delivery of push, SMS and email. Providers fall back to the console
-  without credentials; the delivery pipeline is tested, actual delivery to a phone
+- Real delivery of push, SMS and email. Development simulates absent providers;
+  production records missing transports as failures. Actual delivery to a phone
   or inbox is not.
 - Photos on object storage (S3 / Blob): described above, not implemented.

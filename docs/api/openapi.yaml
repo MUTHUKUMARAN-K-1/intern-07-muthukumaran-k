@@ -5056,6 +5056,11 @@ components:
           type: string
           writeOnly: true
           minLength: 1
+        device_id:
+          type: string
+          nullable: true
+          description: Optional owned browser-push registration to revoke when signing
+            out.
       required:
       - refresh
     MatchLevelEnum:
@@ -5946,11 +5951,20 @@ components:
           format: date-time
           readOnly: true
           nullable: true
+        attempts:
+          type: integer
+          readOnly: true
+        next_attempt_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
         created_at:
           type: string
           format: date-time
           readOnly: true
       required:
+      - attempts
       - body
       - category
       - category_display
@@ -5960,6 +5974,7 @@ components:
       - dose_event
       - error
       - id
+      - next_attempt_at
       - payload
       - sent_at
       - status

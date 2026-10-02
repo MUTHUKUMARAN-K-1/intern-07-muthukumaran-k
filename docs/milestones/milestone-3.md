@@ -1,8 +1,14 @@
 # Milestone 3 — OCR Recognition & Refill Prediction (Week 5–6)
 
-- **Intern:** Reference implementation (mentor-maintained, on `main`)
-- **Branch:** `main`
-- **Submitted on:** 2026-09-30
+- **Intern:** Muthukumaran K
+- **Branch:** `intern/07-muthukumaran-k`
+- **Updated on:** 2026-10-02
+
+This submission extends the reference implementation at `f4e9167`. The
+implementation notes and historical measurements below were inherited; current
+branch changes, test results and deployment limits are recorded in the
+[branch readiness report](../reports/branch-readiness.md). The full backend suite
+now passes 648 tests, including real Tesseract cases.
 
 ## Evaluation criteria
 
@@ -16,7 +22,7 @@
 | Low-stock alerts | Done | Superseded the M2 fixed-threshold warning: alerts now come from the forecast (days left), with the old threshold as a fallback when a medicine has no schedule |
 | Adherence analytics (daily history, percentage, trends) | Done | `GET /api/v1/adherence/summary/`, weekly and monthly reports with CSV; Adherence page |
 
-## What I built
+## Implementation
 
 **Four apps.** `ocr` turns a photo or pasted text into medicines for the patient
 to review. `refills` predicts when each medicine runs out, keeps the stock ledger,
