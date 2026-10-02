@@ -2,6 +2,7 @@ import { useSelector } from 'react-redux';
 import { Navigate } from 'react-router-dom';
 
 import RegisterForm from '../features/auth/RegisterForm.jsx';
+import GoogleSignIn from '../features/auth/GoogleSignIn.jsx';
 import { selectIsAuthenticated } from '../store/authSlice.js';
 import AuthLayout from './AuthLayout.jsx';
 
@@ -15,6 +16,7 @@ export default function RegisterPage() {
       subtitle="Track medicines, never miss a dose, and know when to refill."
     >
       <RegisterForm />
+      <GoogleSignIn />
     </AuthLayout>
   );
 }

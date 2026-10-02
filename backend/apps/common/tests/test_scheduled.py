@@ -77,7 +77,11 @@ def test_the_frequent_group_sends_due_reminders_and_sweeps(client, url, settings
     response = call(client, url, "frequent")
 
     assert response.status_code == 200, response.content
-    assert response.json()["results"] == {"dispatch_due_reminders": 2, "sweep_overdue_doses": 1}
+    assert response.json()["results"] == {
+        "retry_failed_deliveries": 0,
+        "dispatch_due_reminders": 2,
+        "sweep_overdue_doses": 1,
+    }
     due.refresh_from_db()
     stale.refresh_from_db()
     assert due.reminder_sent_at is not None

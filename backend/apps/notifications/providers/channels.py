@@ -16,7 +16,7 @@ import logging
 from django.conf import settings
 from django.core.mail import send_mail
 
-from .base import ConsoleProvider, DeliveryResult, Message
+from .base import ConsoleProvider, DeliveryResult, Message, UnconfiguredProvider
 
 logger = logging.getLogger(__name__)
 
@@ -73,7 +73,11 @@ class EmailProvider:
     name = "email"
 
     def is_configured(self) -> bool:
-        return True
+        return getattr(
+            settings, "NOTIFICATION_ALLOW_CONSOLE", True
+        ) or not settings.EMAIL_BACKEND.endswith(
+            ("console.EmailBackend", "dummy.EmailBackend", "locmem.EmailBackend")
+        )
 
     def send(self, message: Message) -> DeliveryResult:
         if not message.recipient_email:
@@ -119,7 +123,13 @@ class TwilioSmsProvider:
             return DeliveryResult.failed("twilio is not installed.")
 
         try:
-            client = Client(settings.TWILIO_ACCOUNT_SID, settings.TWILIO_AUTH_TOKEN)
+            from twilio.http.http_client import TwilioHttpClient
+
+            client = Client(
+                settings.TWILIO_ACCOUNT_SID,
+                settings.TWILIO_AUTH_TOKEN,
+                http_client=TwilioHttpClient(timeout=10),
+            )
             # SMS has no subject line, so the two are joined into one body.
             text = f"{message.subject}\n{message.body}" if message.subject else message.body
             sms = client.messages.create(
@@ -135,6 +145,7 @@ class TwilioSmsProvider:
 
 
 _CONSOLE = ConsoleProvider()
+_UNCONFIGURED = UnconfiguredProvider()
 
 _PROVIDERS = {
     "PUSH": FirebasePushProvider(),
@@ -146,9 +157,8 @@ _PROVIDERS = {
 def provider_for(channel: str):
     """The provider for a channel, or the console stand-in if it is unconfigured."""
     provider = _PROVIDERS.get(channel)
-    if provider is None:
-        return _CONSOLE
-    if not provider.is_configured():
-        logger.debug("%s provider is not configured; logging to console instead.", channel)
-        return _CONSOLE
+    if provider is None or not provider.is_configured():
+        if getattr(settings, "NOTIFICATION_ALLOW_CONSOLE", True):
+            return _CONSOLE
+        return _UNCONFIGURED
     return provider

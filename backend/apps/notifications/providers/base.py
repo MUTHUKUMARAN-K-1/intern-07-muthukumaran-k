@@ -77,3 +77,15 @@ class ConsoleProvider:
             message.payload,
         )
         return DeliveryResult.sent(provider_message_id="console")
+
+
+class UnconfiguredProvider:
+    """Production never reports an unconfigured transport as successful."""
+
+    name = "unconfigured"
+
+    def is_configured(self) -> bool:
+        return False
+
+    def send(self, message: Message) -> DeliveryResult:
+        return DeliveryResult.failed("Notification channel is not configured on this deployment.")

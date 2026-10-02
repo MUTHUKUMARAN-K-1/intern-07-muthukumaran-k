@@ -214,6 +214,26 @@ class TestSeedRetirement:
 
 
 class TestReadiness:
+    def test_not_ready_when_the_shared_cache_is_down(self, api_client, monkeypatch):
+        from django.core.cache import cache
+
+        def broken(*args, **kwargs):
+            raise RuntimeError("cache connection refused")
+
+        monkeypatch.setattr(cache, "set", broken)
+        response = api_client.get(reverse("ready"))
+        assert response.status_code == 503
+        assert "cache connection" not in str(response.data)
+
+    def test_liveness_does_not_depend_on_the_rate_limit_cache(self, api_client, monkeypatch):
+        from django.core.cache import cache
+
+        def broken(*args, **kwargs):
+            raise RuntimeError("cache connection refused")
+
+        monkeypatch.setattr(cache, "get", broken)
+        assert api_client.get(reverse("health")).status_code == 200
+
     def test_ready_when_the_database_answers(self, api_client):
         response = api_client.get(reverse("ready"))
         assert response.status_code == 200

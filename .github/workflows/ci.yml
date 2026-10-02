@@ -55,7 +55,9 @@ jobs:
           set -uo pipefail
 
           has_backend=false
-          if find backend -name '*.py' -not -path '*/node_modules/*' | grep -q .; then
+          # Stop find itself after the first result. grep -q alone can close the
+          # pipe early and make a populated backend look absent under pipefail.
+          if find backend -name '*.py' -not -path '*/node_modules/*' -print -quit | grep -q .; then
             has_backend=true
           fi
 
@@ -65,7 +67,7 @@ jobs:
           fi
 
           has_ml=false
-          if find ml -name '*.py' | grep -q .; then
+          if find ml -name '*.py' -print -quit | grep -q .; then
             has_ml=true
           fi
 
@@ -282,7 +284,7 @@ jobs:
         working-directory: frontend
     env:
       CI: "true"
-      VITE_API_BASE_URL: http://localhost:8000/api
+      VITE_API_BASE_URL: /api/v1
 
     steps:
       - uses: actions/checkout@v4
@@ -437,7 +439,9 @@ jobs:
           {
             echo "SECRET_KEY=$(openssl rand -hex 40)"
             echo "POSTGRES_PASSWORD=$(openssl rand -hex 16)"
-            echo "ALLOWED_HOSTS=localhost,127.0.0.1,web,backend"
+            # The internal probe must use an allowed Host header, not assume
+            # loopback IPs are in a real deployment's public-host allowlist.
+            echo "ALLOWED_HOSTS=pillsync-ci.example,localhost,web,backend"
             echo "USE_HTTPS=false"
             echo "WEB_PORT=8088"
             echo "WEB_CONCURRENCY=2"

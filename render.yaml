@@ -25,6 +25,7 @@ services:
   - type: web
     name: pillsync-api
     runtime: docker
+    branch: intern/07-muthukumaran-k
     dockerfilePath: ./backend/Dockerfile
     dockerContext: ./backend
     plan: starter
@@ -50,6 +51,18 @@ services:
         fromService: { type: keyvalue, name: pillsync-redis, property: connectionString }
       - key: CELERY_RESULT_BACKEND
         fromService: { type: keyvalue, name: pillsync-redis, property: connectionString }
+      - key: CACHE_URL
+        fromService: { type: keyvalue, name: pillsync-redis, property: connectionString }
+      - key: FRONTEND_BASE_URL
+        value: https://pillsync-web.onrender.com
+      - key: GOOGLE_OAUTH2_CLIENT_ID
+        sync: false
+      - key: SENDGRID_API_KEY
+        sync: false
+      - key: FIREBASE_CREDENTIALS_PATH
+        value: /etc/secrets/firebase-service-account.json
+      - key: OCR_ASYNC
+        value: "false"
       - key: ALLOWED_HOSTS
         value: pillsync-api.onrender.com  # change if you rename the service or add a domain
       - key: CORS_ALLOWED_ORIGINS
@@ -66,6 +79,7 @@ services:
   - type: worker
     name: pillsync-worker
     runtime: docker
+    branch: intern/07-muthukumaran-k
     dockerfilePath: ./backend/Dockerfile
     dockerContext: ./backend
     dockerCommand: celery -A config worker -B -l info --schedule /tmp/celerybeat-schedule
@@ -81,6 +95,14 @@ services:
         fromService: { type: keyvalue, name: pillsync-redis, property: connectionString }
       - key: CELERY_RESULT_BACKEND
         fromService: { type: keyvalue, name: pillsync-redis, property: connectionString }
+      - key: CACHE_URL
+        fromService: { type: keyvalue, name: pillsync-redis, property: connectionString }
+      - key: FRONTEND_BASE_URL
+        value: https://pillsync-web.onrender.com
+      - key: SENDGRID_API_KEY
+        fromService: { type: web, name: pillsync-api, envVarKey: SENDGRID_API_KEY }
+      - key: FIREBASE_CREDENTIALS_PATH
+        value: /etc/secrets/firebase-service-account.json
       - key: ALLOWED_HOSTS
         value: pillsync-api.onrender.com
       - key: DEFAULT_FROM_EMAIL
@@ -91,10 +113,36 @@ services:
   - type: web
     name: pillsync-web
     runtime: static
+    branch: intern/07-muthukumaran-k
     rootDir: frontend
     buildCommand: npm ci && npm run build
     staticPublishPath: dist
+    envVars:
+      - key: NODE_VERSION
+        value: "22"
+      - key: VITE_API_BASE_URL
+        value: /api/v1
+      - key: VITE_GOOGLE_CLIENT_ID
+        fromService: { type: web, name: pillsync-api, envVarKey: GOOGLE_OAUTH2_CLIENT_ID }
+      - key: VITE_FIREBASE_API_KEY
+        sync: false
+      - key: VITE_FIREBASE_AUTH_DOMAIN
+        sync: false
+      - key: VITE_FIREBASE_PROJECT_ID
+        sync: false
+      - key: VITE_FIREBASE_MESSAGING_SENDER_ID
+        sync: false
+      - key: VITE_FIREBASE_APP_ID
+        sync: false
+      - key: VITE_FIREBASE_VAPID_KEY
+        sync: false
     routes:
+      - type: rewrite
+        source: /health/*
+        destination: https://pillsync-api.onrender.com/health/*
+      - type: rewrite
+        source: /static/*
+        destination: https://pillsync-api.onrender.com/static/*
       - type: rewrite
         source: /api/*
         destination: https://pillsync-api.onrender.com/api/*
@@ -105,6 +153,9 @@ services:
         source: /*
         destination: /index.html
     headers:
+      - path: /firebase-messaging-sw.js
+        name: Cache-Control
+        value: no-cache
       - path: /assets/*
         name: Cache-Control
         value: public, max-age=31536000, immutable

@@ -2,6 +2,10 @@
 
 **Intelligent Medicine Reminder and Medication Tracking Platform**
 
+This fork's submission is on **`intern/07-muthukumaran-k`**. Read the
+[milestone coverage and verification report](docs/reports/branch-readiness.md)
+and [deployment guide](docs/deployment.md) to run or deploy this branch.
+
 An AI-powered platform for managing medicine schedules, tracking dosage adherence,
 predicting refill requirements and keeping long-term medication history — built for
 patients, caregivers and administrators, with chronic disease management in mind.

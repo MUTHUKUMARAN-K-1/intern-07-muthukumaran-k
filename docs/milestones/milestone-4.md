@@ -1,122 +1,61 @@
-# Milestone 4 — Analytics, Testing & Deployment (Week 7–8)
+# Milestone 4 — Analytics, Testing and Deployment Readiness
 
-- **Intern:** Reference implementation (mentor-maintained, on `main`)
-- **Branch:** `main`
-- **Submitted on:** 2026-09-30
+- **Intern:** Muthukumaran K
+- **Branch:** `intern/07-muthukumaran-k`
+- **Updated on:** 2026-10-02
+
+This branch builds on the reference implementation at `f4e9167`. Its complete
+feature matrix and changes are in the [branch readiness report](../reports/branch-readiness.md).
 
 ## Evaluation criteria
 
-| Criterion | Status | Evidence (file, path or link) |
+| Criterion | Status | Evidence |
 |---|---|---|
-| Fully deployed frontend and backend | **Partly — packaged and verified, not hosted** | Both images build; the full production stack (Postgres, Redis, gunicorn, nginx, Celery worker and beat) runs from [`docker-compose.prod.yml`](../../docker-compose.prod.yml) and passes a 20-check smoke test, which CI now runs on every push. **There is no live URL**: no cloud account was used. [`render.yaml`](../../render.yaml) and AWS/Azure guides are written and unexercised. See [`deployment.md`](../deployment.md) |
-| Analytics dashboards operational | Done | Patient dashboard, caregiver monitoring, administrator analytics with API latency — [`apps/analytics/`](../../backend/apps/analytics), [`features/analytics/`](../../frontend/src/features/analytics) |
-| Refill and adherence visualisations | Done | Hand-written SVG charts: stock projection, daily doses, adherence rings, breakdown bars — [`components/charts/`](../../frontend/src/components/charts) |
-| Testing and validation completed | Done | 628 backend, 142 frontend, 31 ML tests, an end-to-end walk through the API, 20 production-stack checks — [`testing-report.md`](../reports/testing-report.md) |
-| End-to-end medication workflow demonstrated | Done | [`tests/integration/test_end_to_end.py`](../../backend/tests/integration/test_end_to_end.py) and the [demo script](../demo/demo-script.md) with `seed_demo` data |
-| Documentation complete | Done | [`docs/`](..): architecture, database, API, deployment, reports, demo, presentation |
+| Frontend and backend deployment | Ready to deploy; live hosting pending | Production Dockerfiles, Compose, branch-pinned Render blueprints, [deployment guide](../deployment.md). No hosting account was used |
+| Analytics dashboards | Implemented and tested | Patient, caregiver and administrator dashboards; API role tests and browser workflows |
+| Refill and adherence visualisations | Implemented and tested | Accessible SVG stock projections, adherence rings, daily histories and breakdowns |
+| Testing and validation | 831 automated tests passed here | 648 backend, 148 frontend, 31 ML and 4 Chromium workflows; [testing report](../reports/testing-report.md) |
+| Medication workflow demonstration | Automated and documented | Real browser registration, prescription review, dose action, history, refills and adherence; API integration scenario also covers caregiver alerts and access boundaries |
+| Production reliability | Implemented and tested where available | Shared Redis rate limits, DB/cache readiness, bounded persistent notification retries, durable Redis queue, trusted HTTPS proxy headers and service-worker build |
+| Documentation and presentation | Present and updated | Milestone reports, API schema, database/architecture notes, deployment instructions, [demo script](../demo/demo-script.md) and [presentation outline](../demo/presentation.md) |
 
-## Deployment
+## Validation
 
-- **Live URL:** none. Deploying needs a hosting account and payment method that
-  belong to a person, so it was not done on anyone's behalf. Everything up to that
-  step was built and checked; the remaining step is applying the blueprint.
-- **Platform:** targets Render (`render.yaml`), with AWS and Azure reference
-  architectures; runs today on any Docker host.
-- **Deployment steps:** [`docs/deployment.md`](../deployment.md).
-- **Container images built:** ☑ backend (production stage: gunicorn, Tesseract,
-  collected static files, non-root) ☑ frontend (nginx). Both build in CI.
+Django checks are clean, migration consistency passes, and Python/frontend lint
+and formatting pass. The SPA and Firebase service worker build successfully.
+Backend coverage reports 91% combined statement/branch coverage of `apps`
+(rounded). Chromium tests use the real local Django API; they verify caregiver
+and administrator role boundaries and a 390 px mobile layout as well as the
+patient workflow. External Google and messaging services were not contacted.
 
-What was verified about the deployment, from outside, with `scripts/smoke_test.py`:
-the app is served and client-side routes work; liveness and readiness probes;
-anonymous requests are refused; the admin is reachable through the proxy; a new
-account registers and signs in; a typed prescription is parsed, matched and
-confirmed into reminders; **an image upload passes the proxy and is read by the
-real OCR engine**; forecast, adherence and dashboard answer.
+Docker was unavailable in this workspace. Existing CI covers PostgreSQL, both
+production images and the 20-check full-stack smoke test. The new browser workflow
+runs on this branch and retains its HTML report and failure traces. Check the
+branch Actions results before deploying; local test success does not substitute
+for that container result.
 
-That smoke test found two bugs a green unit-test run could not: the production
-password hasher (Argon2) was configured but not installed, so every registration in
-production would have returned a 500; and nginx's default 1 MB limit would have
-rejected every prescription photo. Both fixed and pinned.
+## Deployment handoff
 
-## Performance metrics
+Use this fork and `intern/07-muthukumaran-k`, rather than `main`. Follow the
+[deployment guide](../deployment.md). Configure real domains, PostgreSQL/Redis,
+Google's public client ID, a verified SMTP/SendGrid sender, Firebase service-account
+files and web VAPID configuration, and Twilio credentials if SMS is enabled.
+Rebuild the frontend when public authentication/push values change. On Render,
+keep image OCR synchronous because only the API has the prescription-media disk.
 
-Measured on the production topology on one laptop, database of 305 users and about
-54,000 dose events. Full method, tables and caveats:
-[`performance.md`](../reports/performance.md).
+**Live URL:** none. Applying the blueprint, running the staging smoke test and
+verifying real Google, reset-email and push/email/SMS delivery are the remaining
+release acceptance steps. The free blueprint is only a demonstration option.
 
-| Metric | Measured value | How it was measured |
-|---|---|---|
-| Medication adherence accuracy | 300/300 random histories match an independent calculation | Cross-check against a naive re-implementation; checks the arithmetic, not clinical suitability |
-| Reminder delivery success rate | 120/120 dispatched and logged (100%) | Real dispatch task on the stack; **console provider** — real device/inbox delivery untested |
-| Missed-dose detection accuracy | precision 100%, recall 100% | 300 doses around the four-hour boundary, incl. snoozed and the exact minute |
-| Refill prediction accuracy | Run-out date: 5.3 days mean error, 57% within ±2 days, 78% within ±5; weekly consumption within 20% in 6 of 9 checks on demo data | 1,000 *simulated* patients; not real-world accuracy |
-| Low-stock alert accuracy | 100% warned before running out, median 6 days' notice, 0% too early | Same simulation |
-| Dashboard response time | median 43 ms, p95 77 ms | Load test, one client |
-| Report generation time | weekly 16 ms, monthly 21 ms, CSV 28 ms | Medians of 15 requests |
-| API response time | median 33 ms, p95 61 ms, p99 79 ms | Load test, one client, mixed endpoints |
-| Concurrent users handled | 100 continuously-active clients, 0 errors (p95 2.0 s on 2 workers; 0.89 s on 6). Comfortable: 10 clients at p95 189 ms (2 workers) | Load test; clients have no think time, so each is far busier than a person |
+## Performance and limitations
 
-The load test also found and fixed real problems: the dashboard was six times
-slower than needed (269 → 43 ms), administrator analytics issued about 1,400
-queries (5.7 s → 0.3 s), and the first load run was **invalid** — a per-user rate
-limit answered most requests with instant `429`s, which the script had counted as
-successes. It now fails such a run. Details in the performance report.
+The inherited [performance report](../reports/performance.md) documents its own
+load-test topology and simulation assumptions. Those results were not re-measured
+in this fork. Synthetic OCR and refill evaluations are regression evidence, not
+clinical or field accuracy claims. Provider acceptance is not proof of an inbox
+or device receipt; ambiguous provider timeouts can duplicate an at-least-once
+retry. Physical-device, cross-browser and accessibility audits remain advisable.
 
-## Testing summary
-
-- **Backend tests:** 628 (624 locally, 4 more with Tesseract, which pass in the
-  backend image). Line coverage **89.7%**; the new apps 96–98%.
-- **Frontend tests:** 142; ESLint and Prettier clean; production build 131 kB gzipped.
-- **ML tests:** 31, including regression gates that fail CI if OCR parsing or the
-  refill predictor gets worse.
-- **End-to-end scenarios covered:** registration → caregiver invitation and consent
-  → prescription upload → OCR → review → confirm → reminders → take one dose, miss
-  another → caregiver alerted → stock counted down → forecast and refill alert to
-  patient and caregiver (once) → refill clears it → adherence report and CSV →
-  dashboards → administrator analytics → boundaries (another patient's 404s,
-  role 403s).
-- **Known failing or skipped tests:** none failing. Four Tesseract tests skip on a
-  machine without the binary and pass in the image and in CI.
-- **Clock independence.** The suite was run with the wall clock fixed at each hour of
-  the day and at the minutes either side of midnight. That exposed ten tests (eight
-  from Milestone 2) that failed for most of the day on a UTC server because they
-  assumed a fixed 08:00 or "a few minutes from now" stays today; they now pin "now".
-  The suite passes at every hour and at 23:50–00:03.
-- **Gaps** (stated in full in the testing report): no automated browser tests, no
-  real notification delivery, OCR measured on synthetic text only, writes not
-  load-tested, no accessibility audit.
-
-## Demo
-
-- **Recording / screenshots:** [`docs/demo/screenshots/`](../demo/screenshots). No
-  video was recorded; the script below can be recorded in about ten minutes.
-- **Walkthrough script:** [`docs/demo/demo-script.md`](../demo/demo-script.md), and
-  [`docs/demo/presentation.md`](../demo/presentation.md) for the slides.
-- `python backend/scripts/run_demo.py` starts a self-contained demo with a month of
-  seeded history in one command.
-
-## Retrospective
-
-**What worked.** Making every uncertain step visible — a confidence, a reason, a
-suggestion instead of a guess — turned out to be both the safest design and the one
-that was easiest to test. Building the evaluation harnesses before trusting the
-parser paid for itself: they found a bug that silently dropped reminders for one
-prescribing style in six. Smoke-testing the deployed stack found a bug that would
-have broken every real deployment, and a green suite had hidden it since Milestone 1.
-
-**What I would do differently.** Run the production stack in CI from Milestone 2, not
-Milestone 4 — three of this milestone's worst defects were deployment-shaped. Pin the
-clock in tests from the start. Read a load test's status codes before its latencies.
-
-**What is still incomplete.**
-
-- **No live deployment** — the one criterion not fully met. It needs a hosting account.
-- **Handwriting** is unsupported; a hosted OCR engine behind the existing seam is the fix.
-- **Real notification delivery** (FCM, Twilio, SendGrid) is wired but untried.
-- **The refill forecast has no trend term**: patients whose adherence is falling are
-  still predicted about 13 days late.
-- **Prescription photos** are on local disk; object storage is documented, not built.
-- **Reports bucket doses by the server's day**, so a patient in another timezone can
-  see a dose on a neighbouring date.
-- **Latency figures shown to administrators** are per process, in memory; a real
-  deployment needs an APM.
+The demo screenshots and presentation outline inherited from the reference build
+remain useful walkthrough material. No deployment video or live-host screenshot
+was fabricated.

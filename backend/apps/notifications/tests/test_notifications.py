@@ -175,7 +175,9 @@ class TestDispatch:
 
         dose.refresh_from_db()
         assert dose.reminder_sent_at is not None
-        log = NotificationLog.objects.get(category=NotificationCategory.DOSE_REMINDER)
+        log = NotificationLog.objects.get(
+            category=NotificationCategory.DOSE_REMINDER, channel=NotificationChannel.PUSH
+        )
         assert log.dose_event_id == dose.pk
         assert log.payload["dose_event_id"] == str(dose.pk)
 

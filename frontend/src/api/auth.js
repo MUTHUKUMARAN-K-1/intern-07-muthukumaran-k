@@ -22,9 +22,20 @@ export const authApi = {
 
   async logout() {
     const refresh = tokenStorage.getRefresh();
+    const deviceId = localStorage.getItem('pillsync.push-device');
+    let serverRevoked = false;
     try {
-      if (refresh) await api.post('/auth/logout/', { refresh });
+      if (refresh) {
+        await api.post('/auth/logout/', { refresh, device_id: deviceId });
+        serverRevoked = true;
+      }
     } finally {
+      if (deviceId) {
+        await import('../features/notifications/push.js')
+          .then(({ disablePush }) => disablePush({ serverRevoked }))
+          .catch(() => {});
+        localStorage.removeItem('pillsync.push-device');
+      }
       // Even if the server rejects the token, this device must forget it.
       tokenStorage.clear();
     }

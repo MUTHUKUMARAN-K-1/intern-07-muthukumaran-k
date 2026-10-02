@@ -22,13 +22,20 @@ const LINKS = [
   { to: '/admin/users', label: 'User management', roles: ['ADMIN'] },
 ];
 
-export default function Sidebar() {
+export default function Sidebar({ mobile = false }) {
   const role = useSelector(selectRole);
   const visible = LINKS.filter((link) => !role || link.roles.includes(role));
 
   return (
-    <nav aria-label="Main" className="hidden w-56 shrink-0 md:block">
-      <ul className="space-y-1">
+    <nav
+      aria-label={mobile ? 'Mobile navigation' : 'Main'}
+      className={
+        mobile
+          ? 'overflow-x-auto border-b border-slate-200 bg-white px-4 py-2 md:hidden'
+          : 'hidden w-56 shrink-0 md:block'
+      }
+    >
+      <ul className={mobile ? 'flex w-max gap-1' : 'space-y-1'}>
         {visible.map((link) => (
           <li key={link.to}>
             <NavLink

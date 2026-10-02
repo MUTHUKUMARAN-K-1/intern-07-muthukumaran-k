@@ -49,6 +49,7 @@ RUN DJANGO_SETTINGS_MODULE=config.settings.prod \
     SECRET_KEY=build-only-not-a-real-secret-key-0000000000 \
     ALLOWED_HOSTS=build \
     POSTGRES_HOST=build-only \
+    CACHE_URL=redis://build-only:6379/2 \
     python manage.py collectstatic --noinput
 
 # chmod here, not in git: an exec bit does not survive a Windows checkout.
@@ -65,7 +66,7 @@ ENV DJANGO_SETTINGS_MODULE=config.settings.prod \
 EXPOSE 8000
 
 HEALTHCHECK --interval=30s --timeout=5s --start-period=40s --retries=3 \
-    CMD curl -fsS "http://127.0.0.1:${PORT}/health/" || exit 1
+    CMD curl -fsS -H "Host: ${HEALTHCHECK_HOST:-${ALLOWED_HOSTS%%,*}}" "http://127.0.0.1:${PORT}/health/ready/" || exit 1
 
 ENTRYPOINT ["/app/scripts/entrypoint.sh"]
 

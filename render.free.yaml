@@ -1,7 +1,7 @@
 # Render Blueprint for a FREE deployment of PillSync. A demo, not for real patients.
 #
 # What is left out compared with render.yaml, and why:
-#   * No Celery worker and no Redis. Render has no free background worker, so an external
+#   * No Celery worker or managed Redis. Supply an external Redis for rate limits. An external
 #     free cron service calls POST /internal/run-jobs/ to send reminders instead. See
 #     docs/deployment.md, "Option 2b".
 #   * No database here. Render's free Postgres has expired after 30 days, so use a free
@@ -15,6 +15,7 @@ services:
   - type: web
     name: pillsync-api
     runtime: docker
+    branch: intern/07-muthukumaran-k
     dockerfilePath: ./backend/Dockerfile
     dockerContext: ./backend
     plan: free
@@ -29,6 +30,10 @@ services:
         generateValue: true
       - key: DATABASE_URL
         sync: false              # you are asked for it when the blueprint is applied
+      - key: CACHE_URL
+        sync: false              # external Redis URL; rate limits are shared across processes
+      - key: FRONTEND_BASE_URL
+        value: https://pillsync-web.onrender.com
       - key: CRON_SECRET
         generateValue: true      # copy it from this service's Environment tab into the cron jobs
       - key: ALLOWED_HOSTS
@@ -45,10 +50,22 @@ services:
   - type: web
     name: pillsync-web
     runtime: static
+    branch: intern/07-muthukumaran-k
     rootDir: frontend
     buildCommand: npm ci && npm run build
     staticPublishPath: dist
+    envVars:
+      - key: NODE_VERSION
+        value: "22"
+      - key: VITE_API_BASE_URL
+        value: /api/v1
     routes:
+      - type: rewrite
+        source: /health/*
+        destination: https://pillsync-api.onrender.com/health/*
+      - type: rewrite
+        source: /static/*
+        destination: https://pillsync-api.onrender.com/static/*
       - type: rewrite
         source: /api/*
         destination: https://pillsync-api.onrender.com/api/*

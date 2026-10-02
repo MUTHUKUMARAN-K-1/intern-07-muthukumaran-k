@@ -6,7 +6,7 @@ from django.conf import settings
 from django.db.models import Count
 from drf_spectacular.utils import extend_schema
 from rest_framework import viewsets
-from rest_framework.decorators import api_view, permission_classes
+from rest_framework.decorators import api_view, permission_classes, throttle_classes
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 
@@ -107,6 +107,7 @@ def enums(request):
 @extend_schema(tags=["reference"], responses={200: HealthSerializer})
 @api_view(["GET"])
 @permission_classes([AllowAny])
+@throttle_classes([])
 def health(request):
     """Liveness probe for the load balancer and the deployment pipeline."""
     return Response({"status": "ok", "service": "pillsync-api", "version": settings.API_VERSION})
@@ -115,6 +116,7 @@ def health(request):
 @extend_schema(tags=["reference"], responses={200: HealthSerializer, 503: HealthSerializer})
 @api_view(["GET"])
 @permission_classes([AllowAny])
+@throttle_classes([])
 def ready(request):
     """Readiness probe: can this instance actually serve requests?
 
@@ -122,12 +124,16 @@ def ready(request):
     database, so an instance that lost its connection is taken out of rotation
     instead of answering every request with a 500.
     """
+    from django.core.cache import cache
     from django.db import connection
 
     try:
         connection.ensure_connection()
         with connection.cursor() as cursor:
             cursor.execute("SELECT 1")
+        cache.set("pillsync.readiness", "ok", timeout=30)
+        if cache.get("pillsync.readiness") != "ok":
+            raise RuntimeError("Shared cache unavailable")
     except Exception:  # noqa: BLE001 - any failure here means "not ready"
         return Response(
             {"status": "unavailable", "service": "pillsync-api", "version": settings.API_VERSION},

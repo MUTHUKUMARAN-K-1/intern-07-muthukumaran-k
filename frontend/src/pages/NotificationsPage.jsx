@@ -5,6 +5,7 @@ import Alert from '../components/common/Alert.jsx';
 import Card from '../components/common/Card.jsx';
 import Spinner from '../components/common/Spinner.jsx';
 import NotificationSettings from '../features/notifications/NotificationSettings.jsx';
+import PushDevices from '../features/notifications/PushDevices.jsx';
 import { useApi } from '../hooks/useApi.js';
 
 export default function NotificationsPage() {
@@ -26,13 +27,17 @@ export default function NotificationsPage() {
       </div>
 
       {preferences.error && <Alert tone="error">{preferences.error.message}</Alert>}
+      <PushDevices />
 
       {!stats.loading && stats.data?.total > 0 && (
-        <Card title="Delivery" subtitle="Whether what we sent actually arrived">
+        <Card
+          title="Delivery"
+          subtitle="Provider acceptance; inbox and device receipts are not tracked. Local demos simulate delivery."
+        >
           <div className="grid gap-4 sm:grid-cols-4">
             {[
               ['Attempted', stats.data.total],
-              ['Delivered', stats.data.sent],
+              ['Accepted', stats.data.sent],
               ['Failed', stats.data.failed],
               ['Success rate', `${stats.data.success_rate_percent}%`],
             ].map(([label, value]) => (

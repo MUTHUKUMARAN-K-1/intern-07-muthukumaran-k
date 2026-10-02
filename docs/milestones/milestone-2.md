@@ -1,8 +1,14 @@
 # Milestone 2 — Medication Management & Reminder System (Week 3–4)
 
-- **Intern:** Reference implementation (mentor-maintained, on `main`)
-- **Branch:** `main`
-- **Submitted on:** 2026-09-05
+- **Intern:** Muthukumaran K
+- **Branch:** `intern/07-muthukumaran-k`
+- **Updated on:** 2026-10-02
+
+This submission extends the reference implementation at `f4e9167`. The
+implementation notes and historical measurements below were inherited; current
+branch changes, test results and deployment limits are recorded in the
+[branch readiness report](../reports/branch-readiness.md). The full backend suite
+now passes 648 tests, including real Tesseract cases.
 
 ## Evaluation criteria
 
@@ -13,11 +19,11 @@
 | Reminder scheduling system functional | Done | [`apps/reminders/`](../../backend/apps/reminders) — dose generation, dispatch, snooze, overdue sweep |
 | Reminder actions: Taken / Missed / Snooze | Done | [`services/actions.py`](../../backend/apps/reminders/services/actions.py), plus Skipped |
 | Medication history tracking implemented | Done | `GET /api/v1/doses/history/` — per-day counts and adherence |
-| Notification workflows integrated (push / email / SMS) | Done | [`apps/notifications/`](../../backend/apps/notifications) — FCM, SendGrid-over-SMTP, Twilio, console fallback |
+| Notification workflows integrated (push / email / SMS) | Done | [`apps/notifications/`](../../backend/apps/notifications) — FCM, SendGrid-over-SMTP, Twilio, browser registration and persistent retries; development-only console fallback |
 | Multiple patient profiles for families | Carried from M1 | A dependent profile's reminders go to whoever manages it |
 | Disease-based medication organisation | Done | `GET /api/v1/medicines/by-condition/` |
 
-## What I built
+## Implementation
 
 **Four apps.** `medications` owns a patient's own medicines — stock, pack size,
 low-stock threshold, instructions, disease category — and the schedules they are

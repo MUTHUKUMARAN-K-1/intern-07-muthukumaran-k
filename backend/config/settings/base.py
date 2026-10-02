@@ -335,6 +335,7 @@ PASSWORD_RESET_TIMEOUT = env_int("PASSWORD_RESET_TIMEOUT_SECONDS", 60 * 60 * 2)
 # and in CI without any third-party account.
 
 FIREBASE_CREDENTIALS_PATH = env("FIREBASE_CREDENTIALS_PATH")
+NOTIFICATION_MAX_ATTEMPTS = env_int("NOTIFICATION_MAX_ATTEMPTS", 3)
 TWILIO_ACCOUNT_SID = env("TWILIO_ACCOUNT_SID")
 TWILIO_AUTH_TOKEN = env("TWILIO_AUTH_TOKEN")
 TWILIO_FROM_NUMBER = env("TWILIO_FROM_NUMBER")
@@ -382,6 +383,10 @@ CELERY_TASK_ALWAYS_EAGER = env_bool("CELERY_TASK_ALWAYS_EAGER", False)
 # late is a dose taken ten minutes late, so dispatch runs every minute, while
 # generation and sweeping are cheap to do far less often.
 CELERY_BEAT_SCHEDULE = {
+    "retry-failed-notifications": {
+        "task": "notifications.retry_failed_deliveries",
+        "schedule": crontab(minute="*"),
+    },
     "dispatch-due-reminders": {
         "task": "reminders.dispatch_due_reminders",
         "schedule": crontab(minute="*"),

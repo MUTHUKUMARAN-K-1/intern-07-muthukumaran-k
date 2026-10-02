@@ -29,12 +29,14 @@ logger = logging.getLogger(__name__)
 
 def _groups() -> dict:
     # Imported here: the task modules import models, which must not load at URL-import time.
+    from apps.notifications.tasks import retry_failed_deliveries
     from apps.ocr.tasks import purge_stale_ocr_jobs
     from apps.refills.tasks import recompute_predictions
     from apps.reminders import tasks as reminders
 
     return {
         "frequent": {
+            "retry_failed_deliveries": retry_failed_deliveries,
             "dispatch_due_reminders": reminders.dispatch_due_reminders,
             "sweep_overdue_doses": reminders.sweep_overdue_doses,
         },

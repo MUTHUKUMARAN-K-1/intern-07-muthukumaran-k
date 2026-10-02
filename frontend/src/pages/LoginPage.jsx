@@ -2,6 +2,7 @@ import { useSelector } from 'react-redux';
 import { Navigate } from 'react-router-dom';
 
 import LoginForm from '../features/auth/LoginForm.jsx';
+import GoogleSignIn from '../features/auth/GoogleSignIn.jsx';
 import { selectIsAuthenticated } from '../store/authSlice.js';
 import AuthLayout from './AuthLayout.jsx';
 
@@ -12,6 +13,7 @@ export default function LoginPage() {
   return (
     <AuthLayout title="Welcome back" subtitle="Sign in to manage your medication schedule.">
       <LoginForm />
+      <GoogleSignIn />
     </AuthLayout>
   );
 }
