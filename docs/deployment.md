@@ -285,6 +285,7 @@ Optional:
 | `USE_HTTPS` | `true` | Redirect to https, HSTS, secure cookies. `false` only for a local smoke test |
 | `CORS_ALLOWED_ORIGINS`, `CSRF_TRUSTED_ORIGINS` | empty | Needed only when the SPA is on another origin |
 | `WEB_CONCURRENCY` | `3` | gunicorn workers |
+| `HEALTHCHECK_HOST` | first `ALLOWED_HOSTS` entry | Internal container probe Host header; override when using a wildcard host entry |
 | `RUN_MIGRATIONS` | `false` | `true` on the **web** container only; runs `migrate` and seeds the catalogue |
 | `SEED_REFERENCE_DATA` | `true` | With `RUN_MIGRATIONS`, load the medicine catalogue if needed |
 | `SENDGRID_API_KEY` | — | Real email through SendGrid. Or set `EMAIL_HOST`, `EMAIL_PORT`, `EMAIL_HOST_USER`, `EMAIL_HOST_PASSWORD`, `EMAIL_USE_TLS` |

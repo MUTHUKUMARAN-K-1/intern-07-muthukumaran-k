@@ -51,6 +51,8 @@ hosting account or notification credentials were available for this run.
 - The demo determinism assertion compares doses by stable patient/medicine/time
   identities with a pinned clock, avoiding PostgreSQL's unspecified ordering of
   rows sharing a dose time while checking their quantities and response times.
+- Internal readiness probes send a configured allowed Host header. CI excludes
+  the loopback IP from the allowlist to verify this public-domain configuration.
 
 ## Verification performed here
 
