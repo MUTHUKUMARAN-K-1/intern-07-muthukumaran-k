@@ -15,6 +15,7 @@ import MedicinesPage from '../pages/MedicinesPage.jsx';
 import MyPatientsPage from '../pages/MyPatientsPage.jsx';
 import NotificationsPage from '../pages/NotificationsPage.jsx';
 import NotFoundPage from '../pages/NotFoundPage.jsx';
+import PasswordResetPage from '../pages/PasswordResetPage.jsx';
 import ProfilePage from '../pages/ProfilePage.jsx';
 import RefillsPage from '../pages/RefillsPage.jsx';
 import RegisterPage from '../pages/RegisterPage.jsx';
@@ -27,6 +28,8 @@ export default function AppRoutes() {
     <Routes>
       <Route path="/login" element={<LoginPage />} />
       <Route path="/register" element={<RegisterPage />} />
+      <Route path="/forgot-password" element={<PasswordResetPage />} />
+      <Route path="/reset-password" element={<PasswordResetPage confirm />} />
       <Route path="/forbidden" element={<ForbiddenPage />} />
 
       <Route

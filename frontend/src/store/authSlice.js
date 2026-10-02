@@ -46,6 +46,17 @@ export const register = createAsyncThunk('auth/register', async (payload, { reje
   }
 });
 
+export const loginWithGoogle = createAsyncThunk(
+  'auth/google',
+  async (payload, { rejectWithValue }) => {
+    try {
+      return await authApi.loginWithGoogle(payload);
+    } catch (error) {
+      return rejectWithValue(error);
+    }
+  }
+);
+
 export const logout = createAsyncThunk('auth/logout', async () => {
   await authApi.logout();
 });
@@ -105,6 +116,9 @@ const authSlice = createSlice({
       .addCase(login.pending, pending)
       .addCase(login.fulfilled, authenticated)
       .addCase(login.rejected, failed)
+      .addCase(loginWithGoogle.pending, pending)
+      .addCase(loginWithGoogle.fulfilled, authenticated)
+      .addCase(loginWithGoogle.rejected, failed)
       .addCase(register.pending, pending)
       .addCase(register.fulfilled, authenticated)
       .addCase(register.rejected, failed)

@@ -73,6 +73,12 @@ export default function LoginForm() {
       </Button>
 
       <p className="text-center text-sm text-slate-600">
+        <Link to="/forgot-password" className="font-medium text-brand-700 hover:underline">
+          Forgot your password?
+        </Link>
+      </p>
+
+      <p className="text-center text-sm text-slate-600">
         New here?{' '}
         <Link to="/register" className="font-medium text-brand-700 hover:underline">
           Create an account

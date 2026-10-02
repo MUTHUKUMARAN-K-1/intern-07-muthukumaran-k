@@ -12,7 +12,7 @@ drf-spectacular==0.30.0
 # --- Authentication ---
 djangorestframework-simplejwt==5.5.1
 PyJWT==2.13.0
-google-auth==2.57.1
+google-auth[requests]==2.57.1
 
 # --- Database ---
 psycopg[binary]==3.3.5
