@@ -159,6 +159,12 @@ services:
         source: /*
         destination: /index.html
     headers:
+      - path: /
+        name: Cache-Control
+        value: no-cache
+      - path: /index.html
+        name: Cache-Control
+        value: no-cache
       - path: /firebase-messaging-sw.js
         name: Cache-Control
         value: no-cache

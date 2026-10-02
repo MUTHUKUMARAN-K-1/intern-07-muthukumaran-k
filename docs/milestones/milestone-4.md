@@ -11,7 +11,7 @@ feature matrix and changes are in the [branch readiness report](../reports/branc
 
 | Criterion | Status | Evidence |
 |---|---|---|
-| Frontend and backend deployment | Ready to deploy; live hosting pending | Production Dockerfiles, Compose, branch-pinned Render blueprints, [deployment guide](../deployment.md). No hosting account was used |
+| Frontend and backend deployment | Core app live on free Render/Neon; 20/20 hosted smoke checks pass | [Live deployment verification](../reports/live-deployment.md), production Dockerfiles, Compose and branch-pinned Render blueprints |
 | Analytics dashboards | Implemented and tested | Patient, caregiver and administrator dashboards; API role tests and browser workflows |
 | Refill and adherence visualisations | Implemented and tested | Accessible SVG stock projections, adherence rings, daily histories and breakdowns |
 | Testing and validation | 831 automated tests passed here | 648 backend, 148 frontend, 31 ML and 4 Chromium workflows; [testing report](../reports/testing-report.md) |
@@ -31,8 +31,9 @@ patient workflow. External Google and messaging services were not contacted.
 Docker was unavailable in this workspace. Existing CI covers PostgreSQL, both
 production images and the 20-check full-stack smoke test. The new browser workflow
 runs on this branch and retains its HTML report and failure traces. Check the
-branch Actions results before deploying; local test success does not substitute
-for that container result.
+successful [branch CI run](https://github.com/MUTHUKUMARAN-K-1/intern-07-muthukumaran-k/actions/runs/37033931264)
+and the matching browser workflow. All 20 checks also passed against the hosted
+Render/Neon application through its public frontend URL.
 
 ## Deployment handoff
 
@@ -43,9 +44,10 @@ files and web VAPID configuration, and Twilio credentials if SMS is enabled.
 Rebuild the frontend when public authentication/push values change. On Render,
 keep image OCR synchronous because only the API has the prescription-media disk.
 
-**Live URL:** none. Applying the blueprint, running the staging smoke test and
-verifying real Google, reset-email and push/email/SMS delivery are the remaining
-release acceptance steps. The free blueprint is only a demonstration option.
+**Live URL:** <https://pillsync-mk-web.onrender.com/login>.
+External scheduler activation, a platform administrator login and real Google,
+reset-email and push/email/SMS acceptance remain pending. The free blueprint is
+a demonstration option with sleeping instances and ephemeral prescription photos.
 
 ## Performance and limitations
 

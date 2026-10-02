@@ -19,9 +19,10 @@ retry, shared-cache and deployment configuration gaps.
 | 3 | Tesseract extraction and catalogue matching, user review before saving, quantities and frequency, consumption-based forecasts, refill/low-stock alerts including caregivers, weekly/monthly adherence and CSV | `backend/apps/ocr/`, `backend/apps/refills/`, `backend/apps/adherence/`, `ml/`, API end-to-end integration test |
 | 4 | Patient/caregiver/admin analytics, adherence and refill charts, automated API/component/browser tests, production images, durable data and job storage, Render blueprints, deployment and demo documentation | `frontend/e2e/`, `docker-compose.prod.yml`, `render.yaml`, `docs/deployment.md`, `docs/demo/` |
 
-**Deployment readiness is complete at the code/configuration level. A live cloud
-deployment and real provider delivery remain release acceptance steps.** No
-hosting account or notification credentials were available for this run.
+**The core application is deployed on free Render hosting with Neon PostgreSQL.**
+All 20 hosted deployment smoke checks passed through the frontend URL. External
+scheduling and real Google/email/push/SMS acceptance remain pending; see
+[live deployment verification](live-deployment.md).
 
 ## Changes in this branch
 
@@ -39,8 +40,10 @@ hosting account or notification credentials were available for this run.
   The UI describes provider acceptance, not an unverified inbox/device receipt.
 - Production rate limits use shared Redis. Readiness checks both PostgreSQL and
   cache connectivity; liveness remains independent of the rate limiter.
-- Redis persists queued jobs with AOF and a no-eviction policy. nginx preserves the
-  trusted TLS proxy's scheme and serves cache/security headers consistently.
+- The full Compose topology persists Redis queues with AOF and no eviction. The
+  free Render deployment instead uses an ephemeral cache and external scheduling.
+  nginx preserves the trusted TLS proxy's scheme; Render has corresponding
+  routing and cache/security headers.
 - Docker builds use the committed npm lockfile and include provider SDKs. Render
   selects this branch, shares environment settings, and keeps OCR on the API where
   the uploaded image resides. Mobile users have a scrollable navigation bar.
@@ -64,11 +67,14 @@ hosting account or notification credentials were available for this run.
 | Chromium browser workflows against a running Django API | **4 passed** |
 | Django system checks / migration consistency | Clean / no missing migrations |
 | Ruff, Black, isort, ESLint, Prettier, production SPA and service-worker build | Passed |
+| Hosted Render/Neon deployment smoke checks | **20 / 20 passed** |
+| Frontend dependency audit | **0 vulnerabilities** after gRPC/brace-expansion patches |
 
 Total: **831 passing automated tests**. Local backend/browser checks used SQLite;
 the existing CI workflow runs PostgreSQL tests, Docker builds and the 20-check
 production-stack smoke test. Docker was unavailable in this workspace, so that
-stack result must be read from the new branch's CI run before deploying. Historical
+stack was verified by [the successful branch CI run](https://github.com/MUTHUKUMARAN-K-1/intern-07-muthukumaran-k/actions/runs/37033931264).
+The matching browser workflow also passed. Historical
 performance results from the reference implementation are linked in
 [`performance.md`](performance.md); they were not re-measured in this run.
 

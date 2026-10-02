@@ -184,8 +184,9 @@ This is the section to read if you take over the project.
 
 ## 7. Limitations and risks
 
-- **Partial cloud deployment.** The completed branch's frontend is live on Render;
-  the API, scheduled jobs and live acceptance remain pending. See
+- **Core cloud deployment is live.** The completed branch's frontend/API run on
+  free Render with Neon PostgreSQL and passed all 20 hosted smoke checks. External
+  scheduled jobs and provider acceptance remain pending. See
   [deployment progress](../deployment.md#no-card-deployment-progress--2-october-2026).
 - **No real notification delivery** has been tried; a reminder that does not reach a
   phone defeats the product. This is the first thing to test with real credentials.
@@ -207,7 +208,7 @@ This is the section to read if you take over the project.
 
 ## 8. Recommended next steps
 
-1. Finish the staging API/database connection and run the smoke test against it.
+1. Activate external scheduling and provision the platform administrator account.
 2. Configure real push/email credentials and measure actual delivery.
 3. Collect consented, real dose data; re-run the refill evaluation on it and add a
    trend term.

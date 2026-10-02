@@ -63,6 +63,21 @@ The deployment preparation update also passed all 148 frontend tests after
 patching the gRPC and brace-expansion dependency advisories. `npm audit` reports
 zero vulnerabilities across the full frontend dependency tree.
 
+## Hosted deployment acceptance
+
+The application at <https://pillsync-mk-web.onrender.com/login>, backed by the
+free Render API and Neon PostgreSQL 16, passed **20 of 20** checks with:
+
+```bash
+python scripts/smoke_test.py https://pillsync-mk-web.onrender.com
+```
+
+This exercises the public frontend rewrites, database/cache readiness, account
+registration/login, prescription-to-medicine flow, scheduled dose records, real
+Tesseract image OCR, refill/adherence/dashboard APIs and patient access boundaries.
+It does not verify external cron execution or provider/device receipt. The test
+created one synthetic patient account. See [live-deployment.md](live-deployment.md).
+
 ## Reproduce
 
 ```bash
@@ -101,8 +116,9 @@ The smoke script creates a synthetic account and exercises OCR, so use staging.
 
 Google and Firebase/Twilio/SendGrid credentials were not supplied. Their adapter
 contracts and local flows were tested, but actual account sign-in and notification
-receipt require provider-backed staging acceptance. The Render frontend is live;
-the API/database connection and hosted workflow acceptance remain pending. See
+receipt require provider-backed staging acceptance. The Render frontend/API and
+Neon database are live; all 20 hosted smoke checks passed. External scheduler and
+provider acceptance remain pending. See
 [deployment progress](../deployment.md#no-card-deployment-progress--2-october-2026).
 OCR evaluations use synthetic printed prescriptions; handwriting and real
 camera artifacts need field testing. Refill evaluations use simulated data. The
