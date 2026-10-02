@@ -160,7 +160,7 @@ Things to know about Render:
 
 ---
 
-## Option 2b — Free: Render + a free database + a free cron  *(demo only; not deployed)*
+## Option 2b — Free: Render + Neon + a free cron  *(demo only)*
 
 For showing the project, not for real patients. [`render.free.yaml`](../render.free.yaml) is the
 blueprint. Free tiers change, so confirm each provider's current limits before relying on them.
@@ -171,10 +171,11 @@ blueprint. Free tiers change, so confirm each provider's current limits before r
 |---|---|
 | No free background worker | Reminders are sent by an outside cron calling the API (below) instead of Celery |
 | The free Render database has expired after 30 days | Use a free Postgres that does not (Neon or Supabase) |
-| Free web services sleep when idle | The first request after a quiet spell takes about a minute. The 5-minute cron below also keeps it awake |
+| Free web services sleep when idle | The first request after a quiet spell can take about a minute; reminder calls can also encounter a cold start |
 | No disk | Uploaded prescription photos are lost on each deploy; OCR still works |
 | About 512 MB of memory | `WEB_CONCURRENCY=1`; a very large photo may fail |
-| Reminders reach the console, not phones | Until you add SendGrid / Firebase / Twilio credentials |
+| Providers need separate credentials | Production delivery fails visibly until real email, Firebase or SMS credentials are configured |
+| Free Key Value has no persistence | Cache and rate-limit counters reset on a cache restart; medicines and notification history remain in Neon |
 
 **Steps**
 
@@ -182,9 +183,10 @@ blueprint. Free tiers change, so confirm each provider's current limits before r
    (a `postgresql://` URL ending in `?sslmode=require`).
 2. In Render choose **New → Blueprint**, pick the repository, and set the blueprint file path to
    `render.free.yaml`. When asked for `DATABASE_URL`, paste the string from step 1.
-3. Apply. Two services are created: `pillsync-api` (Docker, free) and `pillsync-web` (static site).
+3. Apply. Three free resources are configured: `pillsync-mk-api` (Docker), `pillsync-mk-web`
+   (static site) and `pillsync-cache` (Key Value). `CACHE_URL` is wired to the internal cache URL.
    If a name is taken, rename it in the file and update `ALLOWED_HOSTS`, `CORS_ALLOWED_ORIGINS` and
-   both rewrite `destination` lines to match.
+   all API rewrite `destination` lines to match.
 4. When the API is live, check `https://<api>.onrender.com/health/ready/` returns `ok`, then open the
    web app, register, and run `python scripts/smoke_test.py https://<web>.onrender.com`.
 5. Copy `CRON_SECRET` from the API service's **Environment** tab.
@@ -200,6 +202,31 @@ blueprint. Free tiers change, so confirm each provider's current limits before r
 7. Create an admin login with `python manage.py createsuperuser` against the same database, from your own
    machine: `DATABASE_URL=<neon string> DJANGO_SETTINGS_MODULE=config.settings.prod SECRET_KEY=x ALLOWED_HOSTS=x python manage.py createsuperuser`
    (Render's free tier has no shell).
+
+### No-card deployment progress — 2 October 2026
+
+The user requested free hosting without a card. A dedicated Neon project named
+`pillsync` was created on the **Free** plan, using PostgreSQL 16 in Singapore.
+The free Render cache `pillsync-cache` was created in the same region, with all
+external cache traffic blocked.
+
+The frontend `pillsync-mk-web` deployed commit
+`46505074f98b3e9b00f55db7e9b5e499f946b1f7` from
+`intern/07-muthukumaran-k`. The login page was verified at
+<https://pillsync-mk-web.onrender.com/login>. Rewrite rules include the SPA's two
+admin pages before the Django admin proxy, so direct links to the SPA admin
+pages load the frontend.
+
+The deployment dependency audit found a vulnerable gRPC dependency pulled in by
+Firebase's unused Firestore module. The frontend now overrides it to the patched
+`@grpc/grpc-js` 1.13.6. The compatible `brace-expansion` dependency was also updated.
+The full npm audit reports zero vulnerabilities and the 148 frontend tests pass.
+
+**The complete application is not live yet.** The API's free-plan form is prepared,
+but connecting the Neon database, generating app secrets, and creating the API
+service remain pending. The external cron and real notification providers are
+also pending. The frontend alone cannot sign users in until the API is deployed.
+No payment card was added and no paid PillSync resource was created.
 
 The endpoint `POST /internal/run-jobs/` runs the same task functions Celery beat would. It answers 404
 unless `CRON_SECRET` is set, and 403 for a wrong secret, so a deployment with a real worker exposes nothing.

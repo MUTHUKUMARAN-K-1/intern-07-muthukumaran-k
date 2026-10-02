@@ -147,6 +147,12 @@ services:
         source: /api/*
         destination: https://pillsync-api.onrender.com/api/*
       - type: rewrite
+        source: /admin/analytics
+        destination: /index.html
+      - type: rewrite
+        source: /admin/users
+        destination: /index.html
+      - type: rewrite
         source: /admin/*
         destination: https://pillsync-api.onrender.com/admin/*
       - type: rewrite

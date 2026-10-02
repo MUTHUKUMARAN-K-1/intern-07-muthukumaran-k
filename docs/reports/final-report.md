@@ -184,7 +184,9 @@ This is the section to read if you take over the project.
 
 ## 7. Limitations and risks
 
-- **Not deployed.** No live URL. The blueprint and cloud guides are unexercised.
+- **Partial cloud deployment.** The completed branch's frontend is live on Render;
+  the API, scheduled jobs and live acceptance remain pending. See
+  [deployment progress](../deployment.md#no-card-deployment-progress--2-october-2026).
 - **No real notification delivery** has been tried; a reminder that does not reach a
   phone defeats the product. This is the first thing to test with real credentials.
 - **Handwriting** is unsupported, and it is common. **Real phone photographs** have
@@ -196,20 +198,22 @@ This is the section to read if you take over the project.
   device. Its warnings assume the patient records doses faithfully.
 - **Photos on local disk**, so a multi-instance deployment needs object storage first.
 - **Reports bucket by the server's day**, not the patient's, across timezones.
-- **No automated browser tests, accessibility audit, or cross-device testing** of the UI.
+- **Browser coverage is limited.** Four Chromium workflows pass, including an
+  emulated mobile viewport; no expert accessibility audit or physical-device
+  acceptance has been performed.
 - Privacy: prescription photos are medical records. They are served only through an
   authenticated endpoint, kept 30 days if never confirmed, and never logged; but no
   formal privacy review or compliance assessment (HIPAA, GDPR) has been done.
 
 ## 8. Recommended next steps
 
-1. Deploy to a staging host from the blueprint and run the smoke test against it.
+1. Finish the staging API/database connection and run the smoke test against it.
 2. Configure real push/email credentials and measure actual delivery.
 3. Collect consented, real dose data; re-run the refill evaluation on it and add a
    trend term.
 4. Add a hosted OCR engine behind the existing seam for handwriting; evaluate on
    real photographs.
-5. Move photos to object storage; add a browser test suite and an accessibility audit.
+5. Move photos to object storage; extend browser/device coverage and run an accessibility audit.
 6. Get a privacy and clinical-safety review before any real patient uses it.
 
 ## 9. Reproducing this work

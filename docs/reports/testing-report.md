@@ -55,9 +55,13 @@ builds, and the existing **20-check production-stack smoke test**.
 Chromium, starts the real local API/app, and saves reports and failure traces.
 
 **Docker was unavailable locally**, so the updated full production topology was
-not executed in this workspace. Do not copy the reference implementation's old
-20/20 container result as evidence for this commit; inspect this branch's new CI
-run. Historical performance/OCR/refill reports describe their own measurements.
+verified in [this branch's successful CI run](https://github.com/MUTHUKUMARAN-K-1/intern-07-muthukumaran-k/actions/runs/37011229221),
+including all 20 production-stack smoke checks at commit `4650507`. Historical
+performance/OCR/refill reports describe their own measurements.
+
+The deployment preparation update also passed all 148 frontend tests after
+patching the gRPC and brace-expansion dependency advisories. `npm audit` reports
+zero vulnerabilities across the full frontend dependency tree.
 
 ## Reproduce
 
@@ -97,8 +101,10 @@ The smoke script creates a synthetic account and exercises OCR, so use staging.
 
 Google and Firebase/Twilio/SendGrid credentials were not supplied. Their adapter
 contracts and local flows were tested, but actual account sign-in and notification
-receipt require provider-backed staging acceptance. No live cloud deployment was
-made. OCR evaluations use synthetic printed prescriptions; handwriting and real
+receipt require provider-backed staging acceptance. The Render frontend is live;
+the API/database connection and hosted workflow acceptance remain pending. See
+[deployment progress](../deployment.md#no-card-deployment-progress--2-october-2026).
+OCR evaluations use synthetic printed prescriptions; handwriting and real
 camera artifacts need field testing. Refill evaluations use simulated data. The
 browser suite uses Chromium and an emulated mobile viewport, not physical phones
 or every browser. No new load test or expert accessibility audit was performed.
