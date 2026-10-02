@@ -88,7 +88,13 @@ services:
     <<: *backend
     command: celery -A config beat -l info --schedule /tmp/celerybeat-schedule
     healthcheck:
-      disable: true   # beat serves nothing; the HTTP check inherited from the image would always fail
+      # PersistentScheduler creates its database only after initialization.
+      # A dedicated probe also lets modern Compose --wait validate this service.
+      test: ["CMD-SHELL", "test -s /tmp/celerybeat-schedule || test -s /tmp/celerybeat-schedule.db || test -s /tmp/celerybeat-schedule.dat"]
+      interval: 10s
+      timeout: 5s
+      start_period: 20s
+      retries: 3
     depends_on:
       backend:
         condition: service_healthy

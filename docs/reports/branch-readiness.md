@@ -46,6 +46,8 @@ hosting account or notification credentials were available for this run.
   the uploaded image resides. Mobile users have a scrollable navigation bar.
 - CI discovery stops `find` after its first match, preventing a broken pipe under
   `pipefail` from silently skipping backend tests on a populated repository.
+- Celery beat has a dedicated scheduler-initialization probe, so Compose's
+  `--wait` can check every production service without an inapplicable HTTP probe.
 
 ## Verification performed here
 
