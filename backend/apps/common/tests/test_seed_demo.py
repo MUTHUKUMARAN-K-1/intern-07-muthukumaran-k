@@ -58,15 +58,29 @@ def test_it_does_not_touch_real_accounts(make_user):
     assert User.objects.filter(email="real.person@example.com").exists()
 
 
-def test_the_demo_is_deterministic():
+def test_the_demo_is_deterministic(pinned_now):
+    # PostgreSQL may return tied dose times in any order. Compare the full
+    # clinical fixture keyed by stable identities rather than random UUIDs.
+    def snapshot():
+        return list(
+            DoseEvent.objects.order_by(
+                "patient__user__email", "medicine__name", "scheduled_for", "slot"
+            ).values_list(
+                "patient__user__email",
+                "medicine__name",
+                "scheduled_for",
+                "slot",
+                "status",
+                "quantity_expected",
+                "quantity_taken",
+                "responded_at",
+            )
+        )
+
     seed()
-    first = list(
-        DoseEvent.objects.order_by("scheduled_for", "slot").values_list("status", flat=True)
-    )
+    first = snapshot()
     seed(reset=True)
-    second = list(
-        DoseEvent.objects.order_by("scheduled_for", "slot").values_list("status", flat=True)
-    )
+    second = snapshot()
     assert first == second
 
 

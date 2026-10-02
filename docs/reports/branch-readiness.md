@@ -48,6 +48,9 @@ hosting account or notification credentials were available for this run.
   `pipefail` from silently skipping backend tests on a populated repository.
 - Celery beat has a dedicated scheduler-initialization probe, so Compose's
   `--wait` can check every production service without an inapplicable HTTP probe.
+- The demo determinism assertion compares doses by stable patient/medicine/time
+  identities with a pinned clock, avoiding PostgreSQL's unspecified ordering of
+  rows sharing a dose time while checking their quantities and response times.
 
 ## Verification performed here
 
