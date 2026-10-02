@@ -44,6 +44,8 @@ hosting account or notification credentials were available for this run.
 - Docker builds use the committed npm lockfile and include provider SDKs. Render
   selects this branch, shares environment settings, and keeps OCR on the API where
   the uploaded image resides. Mobile users have a scrollable navigation bar.
+- CI discovery stops `find` after its first match, preventing a broken pipe under
+  `pipefail` from silently skipping backend tests on a populated repository.
 
 ## Verification performed here
 
