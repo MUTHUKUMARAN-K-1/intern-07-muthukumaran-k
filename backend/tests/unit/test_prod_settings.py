@@ -17,6 +17,7 @@ import pytest
 BACKEND = Path(__file__).resolve().parents[2]
 
 GOOD = {
+    "CACHE_URL": "redis://db:6379/2",
     "ALLOWED_HOSTS": "pillsync.example.com",
     "SECRET_KEY": "a-long-random-value-that-is-not-the-insecure-default-1234567890",
     "DATABASE_URL": "postgres://user:pw@db:5432/pillsync",  # pragma: allowlist secret
@@ -62,6 +63,7 @@ def test_a_complete_environment_starts_with_everything_locked_down():
         ({"SECRET_KEY": "insecure-dev-key"}, "SECRET_KEY"),
         ({"DATABASE_URL": None}, "PostgreSQL"),
         ({"DATABASE_URL": "sqlite:///db.sqlite3"}, "PostgreSQL"),
+        ({"CACHE_URL": ""}, "CACHE_URL"),
     ],
 )
 def test_it_refuses_to_start_when_something_essential_is_missing(overrides, complaint):

@@ -8,6 +8,7 @@ from config.settings.base import *  # noqa: F403
 from config.settings.base import env, env_bool, env_list
 
 DEBUG = False
+NOTIFICATION_ALLOW_CONSOLE = False
 
 ALLOWED_HOSTS = env_list("ALLOWED_HOSTS")
 if not ALLOWED_HOSTS:
@@ -51,6 +52,19 @@ if DATABASES["default"]["ENGINE"].endswith("sqlite3"):  # noqa: F405
     raise RuntimeError("Production needs PostgreSQL: set DATABASE_URL or POSTGRES_HOST.")
 
 X_FRAME_OPTIONS = "DENY"
+
+# Rate limits must be shared by all gunicorn workers and replicas. Redis also
+# keeps them stable across a web-process restart. Use a separate broker DB.
+CACHE_URL = env("CACHE_URL")
+if not CACHE_URL:
+    raise RuntimeError("CACHE_URL must point to Redis in production for shared rate limits.")
+CACHES = {
+    "default": {
+        "BACKEND": "django.core.cache.backends.redis.RedisCache",
+        "LOCATION": CACHE_URL,
+        "TIMEOUT": 300,
+    }
+}
 
 # Real SMTP only when a mail server is actually configured. Otherwise messages go
 # to the console: reminders and caregiver alerts then "send" but reach nobody, so

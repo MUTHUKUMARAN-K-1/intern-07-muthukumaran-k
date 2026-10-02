@@ -1,4 +1,8 @@
 -r base.txt
 
+# Production adapters are installed, not just enabled by environment variables.
+firebase-admin==7.7.0
+twilio==9.11.2
+
 # Production-only additions.
 # sentry-sdk==2.20.0

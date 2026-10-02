@@ -86,3 +86,6 @@ temp/
 # The intern roster spreadsheet carries 26 people's personal email addresses.
 # Branch assignments live in .github/interns.yml instead, without the emails.
 *.xlsx
+# Browser test artifacts
+frontend/test-results/
+frontend/playwright-report/
