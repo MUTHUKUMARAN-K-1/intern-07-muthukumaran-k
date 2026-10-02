@@ -77,6 +77,8 @@ class NotificationLogSerializer(serializers.ModelSerializer):
             "dose_event",
             "error",
             "sent_at",
+            "attempts",
+            "next_attempt_at",
             "created_at",
         )
         read_only_fields = fields

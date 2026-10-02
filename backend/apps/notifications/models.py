@@ -171,6 +171,8 @@ class NotificationLog(UUIDTimeStampedModel):
     provider_message_id = models.CharField(max_length=255, blank=True)
     error = models.TextField(blank=True)
     sent_at = models.DateTimeField(null=True, blank=True)
+    attempts = models.PositiveSmallIntegerField(default=0)
+    next_attempt_at = models.DateTimeField(null=True, blank=True, db_index=True)
 
     class Meta:
         ordering = ("-created_at",)
@@ -187,7 +189,18 @@ class NotificationLog(UUIDTimeStampedModel):
         self.status = NotificationStatus.SENT
         self.provider_message_id = provider_message_id[:255]
         self.sent_at = timezone.now()
-        self.save(update_fields=["status", "provider_message_id", "sent_at", "updated_at"])
+        self.error = ""
+        self.next_attempt_at = None
+        self.save(
+            update_fields=[
+                "status",
+                "provider_message_id",
+                "sent_at",
+                "error",
+                "next_attempt_at",
+                "updated_at",
+            ]
+        )
 
     def mark_failed(self, error: str) -> None:
         self.status = NotificationStatus.FAILED

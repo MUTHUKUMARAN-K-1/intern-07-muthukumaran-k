@@ -1,5 +1,7 @@
 import { Outlet } from 'react-router-dom';
 
+import PushNotice from '../../features/notifications/PushNotice.jsx';
+
 import Navbar from './Navbar.jsx';
 import Sidebar from './Sidebar.jsx';
 
@@ -14,9 +16,11 @@ export default function AppShell() {
         Skip to content
       </a>
       <Navbar />
+      <Sidebar mobile />
       <div className="mx-auto flex max-w-7xl gap-6 px-4 py-6">
         <Sidebar />
         <main id="main" className="min-w-0 flex-1">
+          <PushNotice />
           <Outlet />
         </main>
       </div>

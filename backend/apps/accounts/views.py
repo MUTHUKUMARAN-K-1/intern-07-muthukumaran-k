@@ -5,6 +5,7 @@ from __future__ import annotations
 import logging
 
 from django.contrib.auth import get_user_model
+from django.core.exceptions import ValidationError as DjangoValidationError
 from django.db.models import Q
 from drf_spectacular.utils import OpenApiResponse, extend_schema
 from rest_framework import generics, mixins, status, viewsets
@@ -140,6 +141,14 @@ class LogoutView(APIView):
                 {"detail": "That refresh token is already invalid."},
                 status=status.HTTP_400_BAD_REQUEST,
             )
+        device_id = request.data.get("device_id")
+        if device_id:
+            from apps.notifications.models import DeviceToken
+
+            try:
+                DeviceToken.objects.filter(pk=device_id, user=request.user).update(is_active=False)
+            except (ValueError, DjangoValidationError):
+                pass  # A stale browser device ID must not prevent sign-out.
         return Response(status=status.HTTP_205_RESET_CONTENT)
 
 

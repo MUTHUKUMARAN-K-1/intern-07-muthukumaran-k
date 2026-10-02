@@ -10,12 +10,15 @@ from __future__ import annotations
 import logging
 from datetime import timedelta
 
+from django.conf import settings
+from django.db import transaction
 from django.utils import timezone
 
 from apps.common.choices import (
     AssignmentStatus,
     NotificationCategory,
     NotificationChannel,
+    NotificationStatus,
 )
 from apps.notifications.models import DeviceToken, NotificationLog, NotificationPreference
 from apps.notifications.providers.base import Message
@@ -25,8 +28,16 @@ logger = logging.getLogger(__name__)
 
 #: Which channels each category uses when the recipient has not narrowed it.
 DEFAULT_CHANNELS = {
-    NotificationCategory.DOSE_REMINDER: (NotificationChannel.PUSH,),
-    NotificationCategory.DOSE_MISSED: (NotificationChannel.PUSH,),
+    NotificationCategory.DOSE_REMINDER: (
+        NotificationChannel.PUSH,
+        NotificationChannel.EMAIL,
+        NotificationChannel.SMS,
+    ),
+    NotificationCategory.DOSE_MISSED: (
+        NotificationChannel.PUSH,
+        NotificationChannel.EMAIL,
+        NotificationChannel.SMS,
+    ),
     NotificationCategory.CAREGIVER_ALERT: (NotificationChannel.PUSH, NotificationChannel.EMAIL),
     NotificationCategory.LOW_STOCK: (NotificationChannel.PUSH,),
     NotificationCategory.REFILL_DUE: (NotificationChannel.PUSH, NotificationChannel.EMAIL),
@@ -79,30 +90,64 @@ def send(
             log.mark_skipped("Blocked by the recipient's notification preferences.")
             continue
 
-        tokens = ()
-        if channel == NotificationChannel.PUSH:
-            tokens = tuple(
-                DeviceToken.objects.filter(user=recipient, is_active=True).values_list(
-                    "token", flat=True
-                )
-            )
-
-        message = Message(
-            recipient_email=recipient.email,
-            recipient_phone=recipient.phone_number,
-            subject=subject,
-            body=body,
-            payload=payload,
-            device_tokens=tokens,
-        )
-
-        result = provider_for(channel).send(message)
-        if result.ok:
-            log.mark_sent(result.provider_message_id)
-        else:
-            log.mark_failed(result.error)
+        deliver(log.pk)
+        log.refresh_from_db()
 
     return logs
+
+
+@transaction.atomic
+def deliver(log_id) -> bool:
+    """Deliver or retry the same log row; a row lock prevents concurrent sends.
+
+    At-least-once delivery: a provider timeout after it accepted a message can
+    still duplicate a notification. Attempts are bounded and persist in Postgres.
+    """
+    log = NotificationLog.objects.select_for_update().select_related("recipient").get(pk=log_id)
+    if log.status in {NotificationStatus.SENT, NotificationStatus.SKIPPED}:
+        return False
+    now = timezone.now()
+    maximum = getattr(settings, "NOTIFICATION_MAX_ATTEMPTS", 3)
+    if log.attempts >= maximum or (log.next_attempt_at and log.next_attempt_at > now):
+        return False
+    recipient = log.recipient
+    preference = preferences_for(recipient)
+    if not recipient.is_active or not preference.should_send(
+        log.category, log.channel, at=timezone.localtime()
+    ):
+        log.next_attempt_at = None
+        log.save(update_fields=["next_attempt_at"])
+        log.mark_skipped("Account inactive or notification preferences changed.")
+        return False
+    tokens = tuple(
+        DeviceToken.objects.filter(user=recipient, is_active=True).values_list("token", flat=True)
+    )
+    message = Message(
+        recipient_email=recipient.email,
+        recipient_phone=recipient.phone_number,
+        subject=log.subject,
+        body=log.body,
+        payload=log.payload,
+        device_tokens=tokens if log.channel == NotificationChannel.PUSH else (),
+    )
+    log.attempts += 1
+    log.next_attempt_at = None
+    log.save(update_fields=["attempts", "next_attempt_at"])
+    try:
+        result = provider_for(log.channel).send(message)
+    except Exception:  # noqa: BLE001 - unexpected provider faults must be retryable too
+        from apps.notifications.providers.base import DeliveryResult
+
+        logger.exception("Notification provider failed for log %s", log.pk)
+        result = DeliveryResult.failed("The delivery provider is temporarily unavailable.")
+    if result.ok:
+        log.mark_sent(result.provider_message_id)
+    else:
+        log.mark_failed(result.error)
+        if log.attempts < maximum:
+            log.next_attempt_at = now + timedelta(minutes=2 ** (log.attempts - 1))
+            log.save(update_fields=["next_attempt_at"])
+    return result.ok
 
 
 # ---------------------------------------------------------------------------

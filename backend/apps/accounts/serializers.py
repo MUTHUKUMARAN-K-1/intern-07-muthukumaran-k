@@ -165,6 +165,12 @@ class LogoutSerializer(serializers.Serializer):
     """The refresh token to blacklist."""
 
     refresh = serializers.CharField(write_only=True)
+    device_id = serializers.CharField(
+        required=False,
+        allow_blank=True,
+        allow_null=True,
+        help_text="Optional owned browser-push registration to revoke when signing out.",
+    )
 
 
 class GoogleAuthSerializer(serializers.Serializer):
